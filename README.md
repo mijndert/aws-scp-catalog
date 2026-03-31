@@ -3,7 +3,7 @@
 A reusable OpenTofu (Terraform) configuration for managing AWS Organizations Service Control Policies (SCPs).
 
 > [!IMPORTANT]
-> This module is designed to be used as a starting point for managing SCPs in your AWS Organization. It provides a set of common policies and a flexible structure for defining and attaching them. You should review and customize the policies and attachment logic to fit your organization's specific needs and security requirements. Upgrade My Cloud is not responsible for any misconfigurations or security issues that may arise from using this module without proper review and customization.
+> This module is designed to be used as a starting point for managing SCPs in your AWS Organization. It provides a set of common policies and a flexible structure for defining and attaching them. You should review and customize the policies and attachment logic to fit your organization's specific needs and security requirements. The author is not responsible for any misconfigurations or security issues that may arise from using this module without proper review and customization.
 
 ## Features
 
@@ -40,7 +40,7 @@ organization_root_id = "r-xxxx"                                 # Replace with y
 ```
 
 > [!TIP]
-> Use the [Remote State](https://github.com/upgrademycloud/aws-remote-state) module to set up your S3 bucket for storing the statefile and ensuring versioning, server-side encryption, and proper access controls are in place.
+> Use the [Remote State](https://github.com/mijndert/aws-remote-state) module to set up your S3 bucket for storing the statefile and ensuring versioning, server-side encryption, and proper access controls are in place.
 
 ### 2. Enabling SCPs
 

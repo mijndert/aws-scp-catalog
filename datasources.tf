@@ -1,13 +1,12 @@
-# Search for all accounts in the organization
-data "aws_organizations_organization" "all" {}
-
 locals {
   account_name_to_id = {
-    for account in data.aws_organizations_organization.all.accounts : account.name => account.id
+    for account in aws_organizations_organization.this.accounts : account.name => account.id
   }
 }
 
-# Search for all OUs under the root
+# OUs are looked up one level below the organization root only.
+# Nested OUs (e.g. "Workloads/Production") are not supported — attaching to
+# them by name will fail with a "key not found" error. See README for details.
 data "aws_organizations_organizational_units" "root" {
   parent_id = var.organization_root_id
 }

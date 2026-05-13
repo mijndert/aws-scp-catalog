@@ -15,8 +15,14 @@ A reusable OpenTofu (Terraform) configuration for managing AWS Organizations Ser
 ## Pre-requisites
 
 - [AWS CLI](https://aws.amazon.com/cli/) configured with appropriate permissions
-- [OpenTofu](https://opentofu.org/) installed
+- [OpenTofu](https://opentofu.org/) **>= 1.8** installed (Terraform is not supported — the S3 backend uses variable interpolation, which only OpenTofu supports)
 - [Taskfile](https://taskfile.dev/) installed (optional, for easier command management)
+
+> [!IMPORTANT]
+> AWS allows at most **5 SCPs attached per target** (organization root, OU, or account), and the AWS-managed `FullAWSAccess` policy counts toward that limit unless you've explicitly detached it. This config enforces the limit with `precondition` blocks at plan time so you find out early rather than at apply.
+
+> [!WARNING]
+> **Only top-level OUs are supported for `ou_names` attachments.** The OU lookup reads `aws_organizations_organizational_units` with `parent_id = organization_root_id`, which returns immediate children of the root only. Nested OUs (e.g. `Workloads/Production`) are not discovered and attaching to them by name will fail with a "key not found" error. If you need to attach to a nested OU, attach via `attach_to_root = true` on a smaller scope, restructure your OU tree, or extend `datasources.tf` to walk the tree.
 
 ## Pre-existing Organization Structure
 
@@ -48,7 +54,7 @@ Edit `policy_documents.tf`:
 
 - Set `attach_to_root` to `true` for the policies you want to attach to the organization root
 - Set `attach_to_root` to `false` for policies you want to attach based on OU or account names, and fill in the `ou_names` and `account_names` lists accordingly
-- If you don't want to use a specific policy, set `attach_to_root` to `false` and leave the `ou_names` and `account_names` lists empty
+- If you don't want to use a specific policy, set `attach_to_root` to `false` and leave the `ou_names` and `account_names` lists empty. Disabled policies are **not** created in AWS Organizations — they only exist as definitions in this codebase.
 
 ### 3. Adding a new SCP
 

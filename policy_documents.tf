@@ -198,7 +198,11 @@ data "aws_iam_policy_document" "deny_disable_cloudtrail" {
     actions = [
       "cloudtrail:DeleteTrail",
       "cloudtrail:StopLogging",
-      "cloudtrail:UpdateTrail"
+      "cloudtrail:UpdateTrail",
+      "cloudtrail:PutEventSelectors",
+      "cloudtrail:PutInsightSelectors",
+      "cloudtrail:DeleteEventDataStore",
+      "cloudtrail:UpdateEventDataStore",
     ]
     resources = ["*"]
   }
@@ -206,7 +210,7 @@ data "aws_iam_policy_document" "deny_disable_cloudtrail" {
 
 data "aws_iam_policy_document" "deny_s3_public_access" {
   statement {
-    sid    = "DenyS3PublicAccess"
+    sid    = "DenyS3PublicACLs"
     effect = "Deny"
     actions = [
       "s3:PutBucketAcl",
@@ -217,7 +221,47 @@ data "aws_iam_policy_document" "deny_s3_public_access" {
     condition {
       test     = "StringEquals"
       variable = "s3:x-amz-acl"
-      values   = ["public-read", "public-read-write"]
+      values   = ["public-read", "public-read-write", "authenticated-read"]
+    }
+  }
+
+  statement {
+    sid    = "DenyDeleteAccountPublicAccessBlock"
+    effect = "Deny"
+    actions = [
+      "s3:DeleteAccountPublicAccessBlock",
+    ]
+    resources = ["*"]
+  }
+
+  statement {
+    sid    = "DenyWeakeningAccountPublicAccessBlock"
+    effect = "Deny"
+    actions = [
+      "s3:PutAccountPublicAccessBlock",
+    ]
+    resources = ["*"]
+
+    condition {
+      test     = "Bool"
+      variable = "s3:PublicAccessBlockConfiguration.BlockPublicAcls"
+      values   = ["false"]
+    }
+  }
+
+  statement {
+    sid    = "DenyWeakeningBucketPublicAccessBlock"
+    effect = "Deny"
+    actions = [
+      "s3:PutBucketPublicAccessBlock",
+      "s3:PutAccessPointPublicAccessBlock",
+    ]
+    resources = ["*"]
+
+    condition {
+      test     = "Bool"
+      variable = "s3:PublicAccessBlockConfiguration.BlockPublicPolicy"
+      values   = ["false"]
     }
   }
 }
@@ -234,7 +278,7 @@ data "aws_iam_policy_document" "deny_root_access_keys" {
 # Require IMDSv2 for EC2 instances
 data "aws_iam_policy_document" "require_imdsv2" {
   statement {
-    sid       = "RequireIMDSv2"
+    sid       = "RequireIMDSv2OnLaunch"
     effect    = "Deny"
     actions   = ["ec2:RunInstances"]
     resources = ["arn:aws:ec2:*:*:instance/*"]
@@ -244,6 +288,16 @@ data "aws_iam_policy_document" "require_imdsv2" {
       variable = "ec2:MetadataHttpTokens"
       values   = ["required"]
     }
+  }
+
+  # AWS does not expose a condition key for the HttpTokens parameter on
+  # ec2:ModifyInstanceMetadataOptions, so the only way to prevent post-launch
+  # downgrades to IMDSv1 is to block the action outright.
+  statement {
+    sid       = "DenyIMDSDowngrade"
+    effect    = "Deny"
+    actions   = ["ec2:ModifyInstanceMetadataOptions"]
+    resources = ["*"]
   }
 }
 
@@ -257,7 +311,11 @@ data "aws_iam_policy_document" "deny_disable_guardduty" {
       "guardduty:DisassociateFromMasterAccount",
       "guardduty:DisassociateMembers",
       "guardduty:StopMonitoringMembers",
-      "guardduty:UpdateDetector"
+      "guardduty:UpdateDetector",
+      "guardduty:UpdateMemberDetectors",
+      "guardduty:UpdateOrganizationConfiguration",
+      "guardduty:DeletePublishingDestination",
+      "guardduty:UpdatePublishingDestination",
     ]
     resources = ["*"]
   }
@@ -272,7 +330,12 @@ data "aws_iam_policy_document" "deny_disable_config" {
       "config:DeleteConfigRule",
       "config:DeleteConfigurationRecorder",
       "config:DeleteDeliveryChannel",
-      "config:StopConfigurationRecorder"
+      "config:DeleteConfigurationAggregator",
+      "config:DeleteOrganizationConfigRule",
+      "config:DeleteRetentionConfiguration",
+      "config:StopConfigurationRecorder",
+      "config:PutConfigurationRecorder",
+      "config:PutDeliveryChannel",
     ]
     resources = ["*"]
   }

@@ -13,9 +13,9 @@ jobs:
     name: OpenTofu fmt + validate
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
 
-      - uses: opentofu/setup-opentofu@v1
+      - uses: opentofu/setup-opentofu@v2
         with:
           tofu_version: "1.8.0"
 
@@ -32,9 +32,9 @@ jobs:
     name: TFLint
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
 
-      - uses: terraform-linters/setup-tflint@v4
+      - uses: terraform-linters/setup-tflint@v6
         with:
           tflint_version: latest
 

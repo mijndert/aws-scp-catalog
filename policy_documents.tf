@@ -98,6 +98,48 @@ locals {
       ou_names       = []
       account_names  = []
     }
+    "DenyCreateIAMUser" = {
+      description    = "Prevents creation of IAM users and their access keys"
+      content        = data.aws_iam_policy_document.deny_create_iam_user.json
+      attach_to_root = false
+      ou_names       = []
+      account_names  = []
+    }
+    "DenyRootMFADeactivation" = {
+      description    = "Prevents deactivating or deleting MFA devices for the root user"
+      content        = data.aws_iam_policy_document.deny_root_mfa_deactivation.json
+      attach_to_root = false
+      ou_names       = []
+      account_names  = []
+    }
+    "DenyDeleteCloudWatchLogs" = {
+      description    = "Prevents deletion of CloudWatch log groups, log streams, and retention policies"
+      content        = data.aws_iam_policy_document.deny_delete_cloudwatch_logs.json
+      attach_to_root = false
+      ou_names       = []
+      account_names  = []
+    }
+    "DenyPublicSnapshots" = {
+      description    = "Prevents sharing EBS and RDS snapshots publicly"
+      content        = data.aws_iam_policy_document.deny_public_snapshots.json
+      attach_to_root = false
+      ou_names       = []
+      account_names  = []
+    }
+    "DenyKMSKeyDeletion" = {
+      description    = "Prevents scheduling deletion or disabling of KMS keys"
+      content        = data.aws_iam_policy_document.deny_kms_key_deletion.json
+      attach_to_root = false
+      ou_names       = []
+      account_names  = []
+    }
+    "RequireS3TLS" = {
+      description    = "Requires TLS (HTTPS) for all S3 requests"
+      content        = data.aws_iam_policy_document.require_s3_tls.json
+      attach_to_root = false
+      ou_names       = []
+      account_names  = []
+    }
   }
 }
 
@@ -292,5 +334,126 @@ data "aws_iam_policy_document" "deny_disable_security_hub" {
       "securityhub:DisassociateMembers"
     ]
     resources = ["*"]
+  }
+}
+
+# Deny creating IAM users and their access keys (enforce SSO/federated identity)
+data "aws_iam_policy_document" "deny_create_iam_user" {
+  statement {
+    sid    = "DenyCreateIAMUser"
+    effect = "Deny"
+    actions = [
+      "iam:CreateUser",
+      "iam:CreateLoginProfile",
+    ]
+    resources = ["*"]
+  }
+
+  statement {
+    sid       = "DenyCreateIAMUserAccessKey"
+    effect    = "Deny"
+    actions   = ["iam:CreateAccessKey"]
+    resources = ["arn:aws:iam::*:user/*"]
+  }
+}
+
+# Deny deactivating or deleting MFA devices for the root user
+data "aws_iam_policy_document" "deny_root_mfa_deactivation" {
+  statement {
+    sid    = "DenyRootMFADeactivation"
+    effect = "Deny"
+    actions = [
+      "iam:DeactivateMFADevice",
+      "iam:DeleteVirtualMFADevice",
+    ]
+    resources = [
+      "arn:aws:iam::*:root",
+      "arn:aws:iam::*:mfa/root-account-mfa-device",
+    ]
+  }
+}
+
+# Deny deleting CloudWatch log groups, log streams, and retention policies
+data "aws_iam_policy_document" "deny_delete_cloudwatch_logs" {
+  statement {
+    sid    = "DenyDeleteCloudWatchLogs"
+    effect = "Deny"
+    actions = [
+      "logs:DeleteLogGroup",
+      "logs:DeleteLogStream",
+      "logs:DeleteRetentionPolicy",
+      "logs:PutRetentionPolicy",
+    ]
+    resources = ["*"]
+  }
+}
+
+# Deny sharing EBS and RDS snapshots publicly
+data "aws_iam_policy_document" "deny_public_snapshots" {
+  statement {
+    sid    = "DenyPublicEBSSnapshots"
+    effect = "Deny"
+    actions = [
+      "ec2:ModifySnapshotAttribute",
+    ]
+    resources = ["*"]
+
+    condition {
+      test     = "StringEquals"
+      variable = "ec2:Add/group"
+      values   = ["all"]
+    }
+  }
+
+  statement {
+    sid    = "DenyPublicRDSSnapshots"
+    effect = "Deny"
+    actions = [
+      "rds:ModifyDBSnapshotAttribute",
+      "rds:ModifyDBClusterSnapshotAttribute",
+    ]
+    resources = ["*"]
+
+    condition {
+      test     = "StringEquals"
+      variable = "rds:AttributeName"
+      values   = ["restore"]
+    }
+
+    condition {
+      test     = "StringEquals"
+      variable = "rds:ValuesToAdd"
+      values   = ["all"]
+    }
+  }
+}
+
+# Deny scheduling deletion or disabling of KMS keys (and their aliases)
+data "aws_iam_policy_document" "deny_kms_key_deletion" {
+  statement {
+    sid    = "DenyKMSKeyDeletion"
+    effect = "Deny"
+    actions = [
+      "kms:ScheduleKeyDeletion",
+      "kms:DisableKey",
+      "kms:DeleteAlias",
+    ]
+    resources = ["*"]
+  }
+}
+
+# Require TLS (HTTPS) for all S3 requests
+data "aws_iam_policy_document" "require_s3_tls" {
+  statement {
+    sid       = "RequireS3TLS"
+    effect    = "Deny"
+    actions   = ["s3:*"]
+    resources = ["*"]
+
+    condition {
+      test     = "Bool"
+      variable = "aws:SecureTransport"
+      values   = ["false"]
+    }
   }
 }

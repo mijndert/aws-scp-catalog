@@ -101,6 +101,12 @@ locals {
 | `RequireEncryptedEBS`        | Requires encryption for EBS volumes                    |
 | `RequireEncryptedRDS`        | Requires encryption for RDS instances and clusters     |
 | `DenyDisableSecurityHub`     | Prevents disabling Security Hub                        |
+| `DenyCreateIAMUser`          | Prevents creation of IAM users and their access keys   |
+| `DenyRootMFADeactivation`    | Prevents deactivating or deleting root MFA devices     |
+| `DenyDeleteCloudWatchLogs`   | Prevents deletion of CloudWatch log groups and streams |
+| `DenyPublicSnapshots`        | Prevents sharing EBS and RDS snapshots publicly        |
+| `DenyKMSKeyDeletion`         | Prevents scheduling deletion or disabling of KMS keys  |
+| `RequireS3TLS`               | Requires TLS (HTTPS) for all S3 requests               |
 
 ## SCP Configuration Options
 
